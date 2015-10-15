@@ -10,17 +10,20 @@ import numpy as np
 
 DATA_PATH = 'C:\Users\Guanwen\Google Drive\CQA\Data\\'
 
-def get_raw_data(filename, sectors=None, exchanges=None):
-    raw_data = pd.read_csv(DATA_PATH + filename)
-    raw_data = raw_data[raw_data['stko']==0]
-    raw_data['adrrq'] = raw_data['adrrq'].fillna(0)
-    raw_data = raw_data[raw_data['adrrq']==0]
+def get_compustat_data(filename, sectors=None, exchanges=None):
+    #sectors: list of string, ['10', '15', '20', '25', '30', '35', '45', '50'] 
+    #exchanges: list of string, ['11', '12', '14']
+    data = pd.read_csv(DATA_PATH + filename, dtype='unicode')
+    data = data[data['stko']=='0']
+    data = data[data['adrrq'].isnull()]
+    if exchanges is not None:
+        data = data[data['exchg'].isin(exchanges)]
+    if sectors is not None:
+        data = data[data['gsector'].isin(sectors)]
+    return data
     
-    if exchanges:
-        raw_data = raw_data[raw_data['exchg'].isin(exchanges)]
-        
-    if sectors:
-        raw_data = raw_data[raw_data['gsector'].isin(exchanges)]
+def get_stock_universe(filename):
+    data = pd.read_csv(DATA_PATH + filename, dtype='unicode')
+    return data
     
-    return raw_data
     

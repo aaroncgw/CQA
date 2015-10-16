@@ -13,12 +13,15 @@ def Calc(PIO_data, tickers=None):
     if tickers is not None:
         raw_data = PIO_data[PIO_data['tic'].isin(tickers)].copy()
     else:
-        raw_data = PIO_data.copy()    
+        raw_data = PIO_data.copy() 
+    
+    raw_data[['revtq', 'cogsq', 'ibq', 'oancfy', 'atq', 'dlttq', 'actq', 'lctq', 'cshoq']] = raw_data[['revtq', 'cogsq', 'ibq', 'oancfy', 'atq', 'dlttq', 'actq', 'lctq', 'cshoq']].astype(float)
     
     #remove the tic which has less than 4 data points
     tic_count = pd.value_counts(raw_data['tic'])
     tic_list = tic_count[tic_count >= 8]
     raw_data = raw_data[raw_data['tic'].isin(tic_list.index)]
+    
     
     #keep the first eight rows of each tic
     f_8q = lambda x:x.sort('datadate', ascending=False).head(8)
@@ -33,17 +36,20 @@ def Calc(PIO_data, tickers=None):
     #remove the tic which has zero revtq, cogsq and ibq             
     col_check = ['revtq', 'cogsq', 'ibq']
     checked_tic = raw_data.groupby('tic').apply(missing_data_clean, check_list=col_check, num=8)
-    null_tic = checked_tic[~checked_tic.isnull()]
-    criterion = lambda row: row['tic'] not in null_tic
-    raw_data = raw_data[raw_data.apply(criterion, axis=1)]
+    if len(checked_tic.isnull()) != 0:    
+        null_tic = checked_tic[~checked_tic.isnull()]
+        criterion = lambda row: row['tic'] not in null_tic
+        raw_data = raw_data[raw_data.apply(criterion, axis=1)]
     
     #remove the tic which has zero oancfy
     col_check = ['oancfy']
     checked_tic = raw_data.groupby('tic').apply(missing_data_clean, check_list=col_check, num=5)
-    null_tic = checked_tic[~checked_tic.isnull()]
-    criterion = lambda row: row['tic'] not in null_tic
-    data = raw_data[raw_data.apply(criterion, axis=1)]
-
+    if len(checked_tic.isnull()) != 0:    
+        null_tic = checked_tic[~checked_tic.isnull()]
+        criterion = lambda row: row['tic'] not in null_tic
+        raw_data = raw_data[raw_data.apply(criterion, axis=1)]
+        
+    data = raw_data.copy()   
     data['profit'] = data['revtq'] - data['cogsq']
     
     #calculate two year's trailling ibq, profit. rev
@@ -92,7 +98,7 @@ def Calc(PIO_data, tickers=None):
     cur['turnover'] = cur['trail_rev'] / cur['atq'] 
     cur['accrual'] = cur['roa'] - cur['cfo']
     
-    #calculate last year's ratios
+    #calculate last year's ratios 
     pre = pre_q.join(pre_trail)
     
     pre['roa'] = pre['trail_ibq'] / pre['atq']

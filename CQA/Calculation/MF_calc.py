@@ -53,4 +53,4 @@ def Calc(MF_data):
     result = result[np.isfinite(result['MF_score'])]
     MF_result = result.sort_index(by='MF_score', ascending=False)
     
-    return MF_result
+    return MF_result['MF_score']

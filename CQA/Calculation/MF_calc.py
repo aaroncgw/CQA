@@ -54,11 +54,3 @@ def Calc(MF_data):
     MF_result = result.sort_index(by='MF_score', ascending=False)
     
     return MF_result
-    
-    
-    
-    
-    
-    #MF_result.to_csv(r'C:\Users\Guanwen\Google Drive\CQA_MF_score.csv')
-    #MF_set = set(MF_result.index.tolist())
-

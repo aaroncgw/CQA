@@ -38,8 +38,9 @@ def get_PE(symbols):
     return pe_df
 
 def get_market_cap(symbols):
+    tickers = [tic.replace('.', '-') for tic in symbols]    
     mkt_cap = list()    
-    value_str = _request(symbols, 'j1')
+    value_str = _request(tickers, 'j1')
     values = value_str.split()
     for value in values:    
         if 'M' in value:

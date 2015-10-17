@@ -15,6 +15,7 @@ def Calc(PIO_data, tickers=None):
     else:
         raw_data = PIO_data.copy() 
     
+    raw_data[['revtq', 'cogsq', 'ibq', 'oancfy', 'atq', 'dlttq', 'actq', 'lctq', 'cshoq']] = raw_data[['revtq', 'cogsq', 'ibq', 'oancfy', 'atq', 'dlttq', 'actq', 'lctq', 'cshoq']].fillna(0)
     raw_data[['revtq', 'cogsq', 'ibq', 'oancfy', 'atq', 'dlttq', 'actq', 'lctq', 'cshoq']] = raw_data[['revtq', 'cogsq', 'ibq', 'oancfy', 'atq', 'dlttq', 'actq', 'lctq', 'cshoq']].astype(float)
     
     #remove the tic which has less than 4 data points

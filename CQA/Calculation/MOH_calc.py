@@ -21,7 +21,8 @@ def Calc(MOH_data, tickers=None):
         raw_data = MOH_data[MOH_data['tic'].isin(tickers)].copy()
     else:
         raw_data = MOH_data.copy()
-        
+    
+    raw_data[['oancfy', 'niq', 'atq', 'revtq', 'ibq', 'xrdq', 'capxy']] = raw_data[['oancfy', 'niq', 'atq', 'revtq', 'ibq', 'xrdq', 'capxy']].fillna(0)    
     raw_data[['oancfy', 'niq', 'atq', 'revtq', 'ibq', 'xrdq', 'capxy']] = raw_data[['oancfy', 'niq', 'atq', 'revtq', 'ibq', 'xrdq', 'capxy']].astype(float)
     
     #remove the tic which has less than 4 data points

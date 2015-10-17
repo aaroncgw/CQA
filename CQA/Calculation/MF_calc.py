@@ -2,9 +2,19 @@ import pandas as pd
 import numpy as np
 
 
-def Calc(MF_data):
-    raw_data = MF_data.copy()
-    
+def Calc(MF_data, tickers=None, mkt_cap_df=None):
+    if tickers is not None:
+        raw_data = MF_data[MF_data['tic'].isin(tickers)].copy()
+    else:
+        raw_data = MF_data.copy()     
+                
+    mkt_cap = 'mkvaltq'
+    if mkt_cap_df is not None:
+        mkt_cap = 'Mkt_cap'
+        raw_data['ticker'] = raw_data['tic']
+        raw_data.set_index('ticker', inplace=True)
+        raw_data = raw_data.join(mkt_cap_df, how='left')
+
     #remove the tic which has less than 4 data points
     tic_count = pd.value_counts(raw_data['tic'])
     tic_list = tic_count[tic_count >= 4]
@@ -15,12 +25,11 @@ def Calc(MF_data):
     raw_data = raw_data.groupby('tic').apply(f_4q)
     
     #calculate ebit_q, capital and ev
-    raw_data[['ibq', 'miiq', 'txtq', 'xintq']] = raw_data[['ibq', 'miiq', 'txtq', 'xintq']].fillna(0)    
-    raw_data[['ivltq', 'ppentq', 'aoq', 'wcapq']] = raw_data[['ivltq', 'ppentq', 'aoq', 'wcapq']].fillna(0)
-    raw_data[['mkt_cap', 'dlcq', 'dlttq', 'pstkq', 'cheq']] = raw_data[['mkt_cap', 'dlcq', 'dlttq', 'pstkq', 'cheq']].fillna(0)
-    raw_data['ebit_q'] = raw_data['ibq'].astype(float) + raw_data['miiq'].astype(float) + raw_data['txtq'].astype(float) + raw_data['xintq'].astype(float)
-    raw_data['capital'] = raw_data['ivltq'].astype(float) + raw_data['ppentq'].astype(float) + raw_data['aoq'].astype(float) + raw_data['wcapq'].astype(float)
-    raw_data['ev'] = raw_data['mkt_cap'].astype(float) + raw_data['dlcq'].astype(float) + raw_data['dlttq'].astype(float) + raw_data['pstkq'].astype(float) - raw_data['cheq'].astype(float)
+    raw_data[['ibq', 'miiq', 'txtq', 'xintq', 'ivltq', 'ppentq', 'aoq', 'wcapq', mkt_cap, 'dlcq', 'dlttq', 'pstkq', 'cheq']] = raw_data[['ibq', 'miiq', 'txtq', 'xintq', 'ivltq', 'ppentq', 'aoq', 'wcapq', mkt_cap, 'dlcq', 'dlttq', 'pstkq', 'cheq']].fillna(0) 
+    raw_data[['ibq', 'miiq', 'txtq', 'xintq', 'ivltq', 'ppentq', 'aoq', 'wcapq', mkt_cap, 'dlcq', 'dlttq', 'pstkq', 'cheq']] = raw_data[['ibq', 'miiq', 'txtq', 'xintq', 'ivltq', 'ppentq', 'aoq', 'wcapq', mkt_cap, 'dlcq', 'dlttq', 'pstkq', 'cheq']].astype(float)
+    raw_data['ebit_q'] = raw_data['ibq'] + raw_data['miiq'] + raw_data['txtq'] + raw_data['xintq']
+    raw_data['capital'] = raw_data['ivltq'] + raw_data['ppentq'] + raw_data['aoq'] + raw_data['wcapq']
+    raw_data['ev'] = raw_data[mkt_cap] + raw_data['dlcq'] + raw_data['dlttq'] + raw_data['pstkq'] - raw_data['cheq']
     
     #remove the tic which has zero ebit_q, capital and ev
     def missing_data_clean(x, check_list, num):
@@ -53,4 +62,4 @@ def Calc(MF_data):
     result = result[np.isfinite(result['MF_score'])]
     MF_result = result.sort_index(by='MF_score', ascending=False)
     
-    return MF_result['MF_score']
+    return MF_result[['gsector', 'exchg', 'trailing_ebit', 'ev', 'capital', 'ebit_ev', 'roc', 'MF_score']]

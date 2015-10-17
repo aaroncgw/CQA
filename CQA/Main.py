@@ -43,41 +43,39 @@ BRK.B      BRK-B
 LEN.B      LEN-B
 '''
 
-comp_MF_data = Utility.get_compustat_data('CQA_MF_data.csv', exchanges=['11', '12', '14'])
-
-
 universe = Utility.get_stock_universe('stock_universe.csv')
-
-
-
 u_tick = universe['Tick'].unique().tolist()
-u_comp_data = comp_MF_data[comp_MF_data['tic'].isin(u_tick)].copy()
-u_comp_data['ticker'] = u_comp_data['tic']
-u_comp_data = u_comp_data.set_index('ticker')
 
-
-mkt_cap_df = YahooData.get_market_cap(u_tick)
+#get data from Yahoo
+returns = YahooData.get_returns(u_tick)
+EBITDAs = YahooData.get_value(u_tick, 'EBITDA')
+ratios = YahooData.get_ratios(u_tick, ['PS', 'PE', 'PB'])
+mkt_cap_df = YahooData.get_value(u_tick, 'Mkt_cap')
 mkt_cap_df.ix['FLOW'] = 22720
 mkt_cap_df.ix['MSG'] = 4450
 mkt_cap_df.ix['ALLE'] = 5730
 mkt_cap_df.ix['GHC'] = 3370
 mkt_cap_df.ix['HME'] = 4370
+mkt_cap_df[mkt_cap_df['Mkt_cap']=='N/A'] = np.nan
 
-mkt_cap_df[mkt_cap_df['mkt_cap']=='N/A'] = np.nan
-
-raw_data = u_comp_data.join(mkt_cap_df, how='left')
-
-MF_result = MF_calc.Calc(raw_data)
-
+#calculate score based on compustat data
+comp_MF_data = Utility.get_compustat_data('CQA_MF_data.csv', exchanges=['11', '12', '14'])
 comp_PIO_data = Utility.get_compustat_data('CQA_PIO_data.csv', exchanges=['11', '12', '14'])
 comp_MOH_data = Utility.get_compustat_data('CQA_MOH_data.csv', exchanges=['11', '12', '14'])
-PIO_result = PIO_calc.Calc(comp_PIO_data, MF_result.index.tolist())
-MOH_result = MOH_calc.Calc(comp_MOH_data, MF_result.index.tolist())
+MF_result = MF_calc.Calc(comp_MF_data, u_tick, mkt_cap_df)
+PIO_result = PIO_calc.Calc(comp_PIO_data, u_tick)
+MOH_result = MOH_calc.Calc(comp_MOH_data, u_tick)
 
+#join all the dataframe
 universe.set_index('Tick', inplace=True)
-result = universe.join(MF_result)
+result = universe.join(returns)
+result = result.join(ratios)
+result = result.join(mkt_cap_df)
+result = result.join(EBITDAs)
+result = result.join(MF_result)
 result = result.join(PIO_result)
 result = result.join(MOH_result)
+
 result.sort_index(by='MF_score', ascending=False, inplace=True)
 
-result.to_csv(r'C:\Users\Guanwen\Google Drive\CQA\CQA_MF_PIO_MOH_score.csv')
+#result.to_csv(r'C:\Users\Guanwen\Google Drive\CQA\CQA_MF_PIO_MOH_score.csv')

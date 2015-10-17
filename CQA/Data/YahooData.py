@@ -2,56 +2,53 @@ from urllib2 import Request, urlopen
 import numpy as np
 import pandas as pd
 
+ratios_tags_dict = {'PS':'p5', 'PB':'p6', 'PE':'r'}
+value_tags_dict = {'Mkt_cap':'j1', 'EBITDA':'j4'}
 
-def _request(symbols, stat):
-    symbol_str = str()    
+def _request(symbols, tags):
+    symbol_str = str()        
     for symbol in symbols:    
         symbol_str = symbol_str + symbol + '+'
     symbol_str = symbol_str[:-1]
-    url = 'http://finance.yahoo.com/d/quotes.csv?s=%s&f=%s' % (symbol_str, stat)
+    tag_str = str() 
+    for tag in tags:    
+        tag_str = tag_str + tag
+    url = 'http://finance.yahoo.com/d/quotes.csv?s=%s&f=%s' % (symbol_str, tag_str)
     req = Request(url)
     resp = urlopen(req)
     return str(resp.read().decode('utf-8').strip())
 
-def get_PS(symbols):
-    value_str = _request(symbols, 'p5')
-    values = value_str.split()
-    ps_dict = dict(zip(symbols, values))
-    ps_df = pd.DataFrame(ps_dict.items(), columns=['ticker', 'PS'])
-    ps_df.set_index('ticker', inplace=True)        
-    return ps_df
+def get_ratios(symbols, ratios):
+    tags = [ratios_tags_dict[ratio] for ratio in ratios]
+    ratio_str = _request(symbols, tags)
+    ratio_list = ratio_str.split()
+    ratio_dict = dict(zip(symbols, ratio_list))
+    ratio_df = pd.DataFrame(ratio_dict.items(), columns=['ticker', 'value'])
+    #if 'GOOG' in symbols:    
+        #ratio_df[ratio_df['ticker']=='GOOG']['ticker'] = 'GOOGL'    
+    ratio_df.set_index('ticker', inplace=True)
+    ratio_df = ratio_df.value.apply(lambda x:pd.Series(x.split(',')))
+    ratio_df.columns = ratios
+    return ratio_df
     
-def get_PB(symbols):
-    value_str = _request(symbols, 'p6')
-    values = value_str.split()
-    pb_dict = dict(zip(symbols, values))        
-    pb_df = pd.DataFrame(pb_dict.items(), columns=['ticker', 'PS'])
-    pb_df.set_index('ticker', inplace=True)        
-    return pb_df
-    
-def get_PE(symbols):
-    value_str = _request(symbols, 'r')
-    values = value_str.split()
-    pe_dict = dict(zip(symbols, values))        
-    pe_df = pd.DataFrame(pe_dict.items(), columns=['ticker', 'PS'])
-    pe_df.set_index('ticker', inplace=True)        
-    return pe_df
-
-def get_market_cap(symbols):
+def get_value(symbols, value_name):
+    tag = value_tags_dict[value_name]
     tickers = [tic.replace('.', '-') for tic in symbols]    
-    mkt_cap = list()    
-    value_str = _request(tickers, 'j1')
+    value_list = list()    
+    value_str = _request(tickers, tag)
     values = value_str.split()
     for value in values:    
         if 'M' in value:
             value = float(value[:len(value)-2])
         elif 'B' in value:
             value = float(value[:len(value)-2]) * pow(10, 3)
-        mkt_cap.append(value)
-    mkt_cap_dict = dict(zip(symbols, mkt_cap))
-    mkt_cap_df = pd.DataFrame(mkt_cap_dict.items(), columns=['ticker', 'mkt_cap'])
-    mkt_cap_df.set_index('ticker', inplace=True)
-    return mkt_cap_df
+        value_list.append(value)
+    value_dict = dict(zip(symbols, value_list))
+    value_df = pd.DataFrame(value_dict.items(), columns=['ticker', value_name])
+    #if 'GOOG' in symbols:    
+        #value_df[value_df['ticker']=='GOOG']['ticker'] = 'GOOGL'
+    value_df.set_index('ticker', inplace=True)
+    return value_df
     
 def get_returns(symbols):  
     rnt_dict = dict()    
@@ -69,5 +66,7 @@ def get_returns(symbols):
         except:
             rnt_dict[symbol] = np.nan
     rnt_df = pd.DataFrame(rnt_dict.items(), columns=['ticker', '1yr_rtn'])
+    #if 'GOOG' in symbols:    
+        #rnt_df[rnt_df['ticker']=='GOOG']['ticker'] = 'GOOGL'    
     rnt_df.set_index('ticker', inplace=True)
     return rnt_df

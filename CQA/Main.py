@@ -46,6 +46,9 @@ LEN.B      LEN-B
 universe = Utility.get_stock_universe('stock_universe.csv')
 u_tick = universe['Tick'].unique().tolist()
 
+comp_PIO_data = Utility.get_compustat_data('CQA_PIO_data.csv', exchanges=['11', '12', '14'])
+PIO_result = PIO_calc.Calc(comp_PIO_data, u_tick)
+'''
 #get data from Yahoo
 returns = YahooData.get_returns(u_tick)
 EBITDAs = YahooData.get_value(u_tick, 'EBITDA')
@@ -66,6 +69,7 @@ MF_result = MF_calc.Calc(comp_MF_data, u_tick, mkt_cap_df)
 PIO_result = PIO_calc.Calc(comp_PIO_data, u_tick)
 MOH_result = MOH_calc.Calc(comp_MOH_data, u_tick)
 
+
 #join all the dataframe
 universe.set_index('Tick', inplace=True)
 result = universe.join(returns)
@@ -79,3 +83,4 @@ result = result.join(MOH_result)
 result.sort_index(by='MF_score', ascending=False, inplace=True)
 
 #result.to_csv(r'C:\Users\Guanwen\Google Drive\CQA\CQA_MF_PIO_MOH_score.csv')
+'''

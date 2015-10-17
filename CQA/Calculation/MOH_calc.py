@@ -67,11 +67,15 @@ def Calc(MOH_data, tickers=None):
     
     #current trailing oancfy
     def trail_oancfy_calc(x):
-        x = x.sort('datadate', ascending=False)    
-        a = x['oancfy'][3:4].values[0]
-        b = x['oancfy'][4:5].values[0]
-        c = x['oancfy'][0:1].values[0]
-        return a-b+c
+        try:        
+            x = x.sort('datadate', ascending=False)    
+            a = x[x['fqtr']== '4']['oancfy'].head(1).values[0] 
+            last_fqtr = x['fqtr'].head(1).values[0]
+            b = x[x['fqtr']==last_fqtr]['oancfy'].tail(1).values[0] 
+            c = x['oancfy'][0:1].values[0]
+            return a-b+c
+        except:
+            print list(x['tic'])[0]
         
     trail_oancfy = data.groupby('tic').apply(trail_oancfy_calc)
     trail_oancfy.name = 'trail_oancfy'

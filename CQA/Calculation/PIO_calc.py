@@ -80,7 +80,7 @@ def Calc(PIO_data, tickers=None):
             x = x.sort('datadate', ascending=False)    
             a = x[x['fqtr']== '4']['oancfy'].head(1).values[0] 
             last_fqtr = x['fqtr'].head(1).values[0]
-            b = x[x['fqtr']==last_fqtr]['oancfy'].tail(1).values[0] 
+            b = x[x['fqtr']==last_fqtr]['oancfy'].head(2).values[1] 
             c = x['oancfy'][0:1].values[0]
             return a-b+c
         except:
@@ -142,7 +142,10 @@ def Calc(PIO_data, tickers=None):
         
     PIO_result = data_set.groupby('tic').apply(pio_score_calc)
     PIO_result.name = 'pio score'
-    #PIO_cur = cur
+    #PIO_cur_pre = cur
     #PIO_score = PIO_cur.join(PIO_result)
-    #PIO_score.to_csv(r'C:\Users\Guanwen\Google Drive\CQA_PIO_score.csv')
+    #data_set.set_index('tic', inplace=True)
+    #data_set.sort_index(inplace=True)
+    #data_set.to_csv(r'C:\Users\Guanwen\Google Drive\CQA_PIO_score.csv')
+    #raw_data.to_csv(r'C:\Users\Guanwen\Google Drive\CQA_PIO_raw.csv')
     return PIO_result

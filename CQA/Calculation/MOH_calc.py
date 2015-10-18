@@ -15,22 +15,24 @@ Created on Sat Oct 03 08:59:14 2015
 import pandas as pd
 import numpy as np
 
-def Calc(MOH_data, tickers=None):
+def Calc(MOH_data, tickers=None, ad_data=None):
     
     if tickers is not None:
         raw_data = MOH_data[MOH_data['tic'].isin(tickers)].copy()
+        if ad_data is not None:
+            raw_ad_data = ad_data[ad_data['tic'].isin(tickers)].copy()
     else:
         raw_data = MOH_data.copy()
     
-    raw_data[['oancfy', 'niq', 'atq', 'revtq', 'ibq', 'xrdq', 'capxy']] = raw_data[['oancfy', 'niq', 'atq', 'revtq', 'ibq', 'xrdq', 'capxy']].fillna(0)    
-    raw_data[['oancfy', 'niq', 'atq', 'revtq', 'ibq', 'xrdq', 'capxy']] = raw_data[['oancfy', 'niq', 'atq', 'revtq', 'ibq', 'xrdq', 'capxy']].astype(float)
+    raw_data[['oancfy', 'atq', 'revtq', 'ibq', 'xrdq', 'capxy']] = raw_data[['oancfy', 'atq', 'revtq', 'ibq', 'xrdq', 'capxy']].fillna(0)    
+    raw_data[['oancfy', 'atq', 'revtq', 'ibq', 'xrdq', 'capxy']] = raw_data[['oancfy', 'atq', 'revtq', 'ibq', 'xrdq', 'capxy']].astype(float)
     
-    #remove the tic which has less than 4 data points
+    #remove the tic which has less than 16 data points
     tic_count = pd.value_counts(raw_data['tic'])
     tic_list = tic_count[tic_count >= 16]
     raw_data = raw_data[raw_data['tic'].isin(tic_list.index)]
     
-    #keep the first eight rows of each tic
+    #keep the first 16 rows of each tic
     f_16q = lambda x:x.sort('datadate', ascending=False).head(16)
     raw_data = raw_data.groupby('tic').apply(f_16q)
 
@@ -40,7 +42,7 @@ def Calc(MOH_data, tickers=None):
             if 0 in list(x[col]):
                 return list(x['tic'])[0]
     
-    col_check = ['oancfy', 'niq']
+    col_check = ['oancfy']
     checked_tic = raw_data.groupby('tic').apply(missing_data_clean, check_list=col_check, num=5)
     if len(checked_tic.isnull()) != 0:
         null_tic = checked_tic[~checked_tic.isnull()]
@@ -61,17 +63,17 @@ def Calc(MOH_data, tickers=None):
     #current trailing ibq, R&D, capxy         
     f1 = lambda x:x.sort('datadate', ascending=False)[0:4]
     group_cur = data.groupby('tic').apply(f1)
-    trail_record = group_cur.groupby(['tic'])[['ibq', 'niq', 'xrdq', 'capxy']].sum()
+    trail_record = group_cur.groupby(['tic'])[['ibq', 'xrdq', 'capxy']].sum()
     trail_record.name = 'trail_record'
-    trail_record.columns = ['trail_ibq', 'trail_niq', 'trail_xrdq', 'trail_capxy']
+    trail_record.columns = ['trail_ibq', 'trail_xrdq', 'trail_capxy']
     
-    #current trailing oancfy
+    #calculate one year trailing oancfy
     def trail_oancfy_calc(x):
         try:        
             x = x.sort('datadate', ascending=False)    
             a = x[x['fqtr']== '4']['oancfy'].head(1).values[0] 
             last_fqtr = x['fqtr'].head(1).values[0]
-            b = x[x['fqtr']==last_fqtr]['oancfy'].tail(1).values[0] 
+            b = x[x['fqtr']==last_fqtr]['oancfy'].head(2).values[1] 
             c = x['oancfy'][0:1].values[0]
             return a-b+c
         except:
@@ -121,10 +123,19 @@ def Calc(MOH_data, tickers=None):
     cur = cur.join(roa_q_var)
     cur = cur.join(sale_growth_var)
     
+    if ad_data is not None:
+        cur_ad = raw_ad_data.groupby('tic').apply(f3)
+        cur_ad.set_index('tic', inplace=True)
+        cur_ad = cur_ad['xad']
+        cur = cur.join(cur_ad)
+        cur['xad'].fillna(0, inplace=True)
+        cur['xad'] = cur['xad'].astype(float)
+    
     cur['roa'] = cur['trail_ibq'] / cur['atq']
     cur['cash_roa'] = cur['trail_oancfy'] / cur['atq']
     cur['rd_intensity'] = cur['trail_xrdq'] / cur['atq_pre']
     cur['capxy_intensity'] = cur['trail_capxy'] / cur['atq_pre']
+    cur['xad_intensity'] = cur['xad'] / cur['atq_pre']
     
     roa_median = cur.groupby(['sic2'])[['roa']].median()
     roa_median = roa_median.reset_index()
@@ -146,6 +157,11 @@ def Calc(MOH_data, tickers=None):
     capxy_intensity_median.columns = ['sic2', 'capxy_intensity_median']
     cur = pd.merge(cur, capxy_intensity_median, how='left', on=['sic2'])
     
+    xad_intensity_median = cur.groupby(['sic2'])[['xad_intensity']].median()
+    xad_intensity_median = xad_intensity_median.reset_index()
+    xad_intensity_median.columns = ['sic2', 'xad_intensity_median']
+    cur = pd.merge(cur, xad_intensity_median, how='left', on=['sic2'])
+    
     roa_q_var_median = cur.groupby(['sic2'])[['roa_q_var']].median()
     roa_q_var_median = roa_q_var_median.reset_index()
     roa_q_var_median.columns = ['sic2', 'roa_q_var_median']
@@ -156,7 +172,13 @@ def Calc(MOH_data, tickers=None):
     sale_growth_var_median.columns = ['sic2', 'sale_growth_var_median']
     cur = pd.merge(cur, sale_growth_var_median, how='left', on=['sic2'])
     
-    #cur.groupby(['sic2']).size()
+    #set score to N/A for the firm in an industry which has less than 4 firms
+    grouped = data.groupby('sic2')
+    sic2_firms_count_series = grouped.tic.nunique()
+    sic2_firms_count = pd.DataFrame(sic2_firms_count_series)
+    sic2_firms_count.columns = ['sic2_firms_count']
+    sic2_firms_count.reset_index(inplace=True)
+    cur = pd.merge(cur, sic2_firms_count, how='inner', on=['sic2', 'sic2'])    
     
     def MOH_score_calc(x):
         score = 0
@@ -164,7 +186,7 @@ def Calc(MOH_data, tickers=None):
             score = score + 1
         if (x['cash_roa'] > x['cash_roa_median']):
             score = score + 1
-        if (x['trail_oancfy'] > x['trail_niq']):
+        if (x['trail_oancfy'] > x['trail_ibq']):
             score = score + 1
         if (x['rd_intensity'] > x['rd_intensity_median']):
             score = score + 1
@@ -172,8 +194,12 @@ def Calc(MOH_data, tickers=None):
             score = score + 1
         if (x['capxy_intensity'] > x['capxy_intensity_median']):
             score = score + 1
+        if (x['xad_intensity'] > x['xad_intensity_median']):
+            score = score + 1
         if (x['roa_q_var'] > x['roa_q_var_median']):
             score = score + 1
+        if float(x['sic2_firms_count']) < 4:
+            score = 'N/A'
             
         return score
         
@@ -181,6 +207,8 @@ def Calc(MOH_data, tickers=None):
     #MOH_score = MOH_cur.join(MOH_result)      
     cur.set_index('tic', inplace=True)
     MOH_result = cur.apply(MOH_score_calc, axis=1)
+    #cur.to_csv(r'C:\Users\Guanwen\Google Drive\CQA_MOH_score.csv')
+    #raw_data.to_csv(r'C:\Users\Guanwen\Google Drive\CQA_MOH_raw.csv')
     MOH_result.name = 'moh score'
     
     return MOH_result

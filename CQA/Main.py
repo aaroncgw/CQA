@@ -84,4 +84,4 @@ result = result.join(MOH_result)
 
 result.sort_index(by='MF_score', ascending=False, inplace=True)
 
-#result.to_csv(r'C:\Users\Guanwen\Google Drive\CQA\CQA_MF_PIO_MOH_score.csv')
+result.to_csv(r'C:\Users\Guanwen\Google Drive\CQA\CQA_MF_PIO_MOH_score.csv')

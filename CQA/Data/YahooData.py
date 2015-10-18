@@ -54,7 +54,7 @@ def get_returns(symbols):
     rnt_dict = dict()    
     for symbol in symbols:    
         try:        
-            url = 'http://ichart.finance.yahoo.com/table.csv?s=%s&a=09&b=9&c=2014&d=09&e=9&f=2015&g=d&ignore=.csv' % (symbol)
+            url = 'http://ichart.finance.yahoo.com/table.csv?s=%s&a=09&b=16&c=2014&d=08&e=16&f=2015&g=d&ignore=.csv' % (symbol)
             req = Request(url)
             resp = urlopen(req)
             value_str = str(resp.read().decode('utf-8').strip())

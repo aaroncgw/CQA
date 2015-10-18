@@ -190,13 +190,13 @@ def Calc(MOH_data, tickers=None, ad_data=None):
             score = score + 1
         if (x['rd_intensity'] > x['rd_intensity_median']):
             score = score + 1
-        if (x['sale_growth_var'] > x['sale_growth_var_median']):
+        if (x['sale_growth_var'] < x['sale_growth_var_median']):
             score = score + 1
         if (x['capxy_intensity'] > x['capxy_intensity_median']):
             score = score + 1
         if (x['xad_intensity'] > x['xad_intensity_median']):
             score = score + 1
-        if (x['roa_q_var'] > x['roa_q_var_median']):
+        if (x['roa_q_var'] < x['roa_q_var_median']):
             score = score + 1
         if float(x['sic2_firms_count']) < 4:
             score = 'N/A'

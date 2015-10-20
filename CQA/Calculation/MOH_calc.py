@@ -209,7 +209,7 @@ def Calc(MOH_data, tickers=None, ad_data=None):
     MOH_result = cur.apply(MOH_score_calc, axis=1)
     #cur.to_csv(r'C:\Users\Guanwen\Google Drive\CQA_MOH_score.csv')
     #raw_data.to_csv(r'C:\Users\Guanwen\Google Drive\CQA_MOH_raw.csv')
-    MOH_result.name = 'moh score'
+    MOH_result.name = 'moh_score'
     
     return MOH_result
 

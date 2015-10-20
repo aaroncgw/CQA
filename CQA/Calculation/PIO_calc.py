@@ -141,11 +141,13 @@ def Calc(PIO_data, tickers=None):
         return score
         
     PIO_result = data_set.groupby('tic').apply(pio_score_calc)
-    PIO_result.name = 'pio score'
-    #PIO_cur_pre = cur
-    #PIO_score = PIO_cur.join(PIO_result)
+    PIO_result.name = 'pio_score'
+    #cur.reset_index(inplace=True)
+    cur.set_index('tic', inplace=True)    
+    PIO_cur = cur
+    PIO_score = PIO_cur.join(PIO_result)
     #data_set.set_index('tic', inplace=True)
     #data_set.sort_index(inplace=True)
     #data_set.to_csv(r'C:\Users\Guanwen\Google Drive\CQA_PIO_score.csv')
     #raw_data.to_csv(r'C:\Users\Guanwen\Google Drive\CQA_PIO_raw.csv')
-    return PIO_result
+    return PIO_score[['pio_score', 'trail_oancfy']]

@@ -46,7 +46,7 @@ LEN.B      LEN-B
 universe = Utility.get_stock_universe('stock_universe.csv')
 u_tick = universe['Tick'].unique().tolist()
 
-#comp_MOH_data = Utility.get_compustat_data('CQA_MOH_data.csv', exchanges=['11', '12', '14'])
+#comp_MF_data = Utility.get_compustat_data('CQA_MF_data.csv', exchanges=['11', '12', '14'])
 #comp_MOH_ad_data = Utility.get_compustat_data('CQA_MOH_AD_data.csv', exchanges=['11', '12', '14'])
 #MOH_result = MOH_calc.Calc(comp_MOH_data, u_tick, comp_MOH_ad_data)
 
@@ -69,7 +69,7 @@ comp_MOH_data = Utility.get_compustat_data('CQA_MOH_data.csv', exchanges=['11', 
 comp_MOH_ad_data = Utility.get_compustat_data('CQA_MOH_AD_data.csv', exchanges=['11', '12', '14'])
 MF_result = MF_calc.Calc(comp_MF_data, u_tick, mkt_cap_df)
 PIO_result = PIO_calc.Calc(comp_PIO_data, u_tick)
-#MOH_result = MOH_calc.Calc(comp_MOH_data, u_tick, comp_MOH_ad_data)
+MOH_result = MOH_calc.Calc(comp_MOH_data, u_tick, comp_MOH_ad_data)
 
 
 #join all the dataframe
@@ -80,10 +80,10 @@ result = result.join(mkt_cap_df)
 result = result.join(EBITDAs)
 result = result.join(MF_result)
 result = result.join(PIO_result)
-#result = result.join(MOH_result)
+result = result.join(MOH_result)
 
 result.sort_index(by='MF_score', ascending=False, inplace=True)
-
+'''
 result[result['PB']=='N/A'] = np.nan
 result[result['PE']=='N/A'] = np.nan
 result[result['PS']=='N/A'] = np.nan
@@ -101,7 +101,7 @@ test_rank['composite_score'] = test_rank['value_rank'] + test_rank['1yr_rtn']
 test_rank.sort_index(by='composite_score', ascending=False, inplace=True)
 test_rank.to_csv(r'C:\Users\Guanwen\Google Drive\CQA\composite_score.csv')
 #result.to_csv(r'C:\Users\Guanwen\Google Drive\CQA\CQA_MF_PIO_MOH_score.csv')
-
+'''
 
 
 

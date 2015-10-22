@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import math
 
 
 def Calc(MF_data, tickers=None, mkt_cap_df=None):
@@ -40,10 +41,12 @@ def Calc(MF_data, tickers=None, mkt_cap_df=None):
     
     col_check = ['ebit_q', 'capital', 'ev']
     checked_tic = raw_data.groupby('tic').apply(missing_data_clean, check_list=col_check, num=4)
-    null_tic = checked_tic[~checked_tic.isnull()]
-    criterion = lambda row: row['tic'] not in null_tic
-    data = raw_data[raw_data.apply(criterion, axis=1)]
+    if len(checked_tic.isnull()) != 0:        
+        null_tic = checked_tic[~checked_tic.isnull()]
+        criterion = lambda row: row['tic'] not in null_tic
+        raw_data = raw_data[raw_data.apply(criterion, axis=1)]
     
+    data = raw_data.copy()   
     #calculate trailling ebit
     trail_ebit = data.groupby(['tic'])['ebit_q'].sum()
     trail_ebit.name = 'trailing_ebit'
@@ -51,15 +54,28 @@ def Calc(MF_data, tickers=None, mkt_cap_df=None):
     #get most recent data for each tic
     f_current = lambda x:x.sort('datadate', ascending=False).head(1)
     most_recent_record = data.groupby('tic').apply(f_current)
-    result = most_recent_record.join(trail_ebit)
-    result = result.set_index('tic')
+    data_set = most_recent_record.join(trail_ebit)
+    data_set['tikcer'] = data_set['tic']    
+    
     
     #calculate MF score
-    result['ev_ebit'] = result['ev'] / result['trailing_ebit']
-    result['ebit_ev'] = result['trailing_ebit'] / result['ev']
-    result['roc'] = result['trailing_ebit'] / result['capital']
-    result['MF_score'] = 0.5*(result['ebit_ev'] + result['roc']) - 0.5*np.square(result['ebit_ev'] - result['roc'])
-    result = result[np.isfinite(result['MF_score'])]
-    MF_result = result.sort_index(by='MF_score', ascending=False)
+    data_set['ev_ebit'] = data_set['ev'] / data_set['trailing_ebit']
+    data_set['ebit_ev'] = data_set['trailing_ebit'] / data_set['ev']
+    data_set['roc'] = data_set['trailing_ebit'] / data_set['capital']
+    
+    def mf_score_calc(x):
+        score = 0        
+        if (x['ebit_ev'] >= 0).bool():
+            score = math.sqrt(x['ebit_ev'] * x['roc'])
+        elif (x['ebit_ev'] < 0).bool():
+            score = 0.5*(x['ebit_ev'] + x['roc']) - 0.5*np.square(x['ebit_ev'] - x['roc'])
+        return float(score)
+    
+    result = data_set.groupby('tic').apply(mf_score_calc)
+    result.name = 'MF_score'
+    data_set.set_index('tikcer', inplace=True)
+    MF_result = data_set.join(result)
+    #MF_result = MF_result[np.isfinite(MF_result['MF_score'])]
+    MF_result.sort_index(by='MF_score', ascending=False, inplace=True)
     
     return MF_result[['gsector', 'exchg', 'trailing_ebit', 'ev', 'capital', 'ebit_ev', 'roc', 'MF_score']]

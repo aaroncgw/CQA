@@ -1,4 +1,5 @@
 from urllib2 import Request, urlopen
+import urllib, re
 import numpy as np
 import pandas as pd
 
@@ -70,3 +71,77 @@ def get_returns(symbols):
         #rnt_df[rnt_df['ticker']=='GOOG']['ticker'] = 'GOOGL'    
     rnt_df.set_index('ticker', inplace=True)
     return rnt_df
+
+def get_ev(symbols):
+    ev = None
+    ev_dict = dict()    
+    for symbol in symbols:
+        value = keystatfunc(symbol)[0]
+        if 'M' in value:
+            ev = float(value[:len(value)-2])
+        elif 'B' in value:
+            ev = float(value[:len(value)-2]) * pow(10, 3)
+        ev_dict[symbol] = ev
+    ev_df = pd.DataFrame(ev_dict.items(), columns=['ticker', 'ev'])
+    return ev_df
+    
+value_name_list = ['Enterprise Value', 
+                    'Trailing P/E', 
+                    'Forward P/E', 
+                    'PEG Ratio', 
+                    'P/S', 
+                    'P/B', 
+                    'EV/Revenue', 
+                    'EV/EBITDA', 
+                    'Fiscal Year Ends:', 
+                    'Most Recent Quarter', 
+                    'Profit Margin', 
+                    'Operating Margin', 
+                    'ROA', 
+                    'ROE', 
+                    'Revenue', 
+                    'Revenue Per Share', 
+                    'Qtrly Revenue Growth',
+                    'Gross Profit',
+                    'EBITDA',
+                    'Net Income Avl to Common',
+                    'Diluted EPS',
+                    'Qtrly Earnings Growth',
+                    'Total Cash',
+                    'Total Cash Per Share',
+                    'Total Debt',
+                    'Total Debt/Equity',
+                    'Current Ratio',
+                    'Book Value Per Share',
+                    'Operating Cash Flow',
+                    'Levered Free Cash Flow']  
+                    
+def keystatfunc(symbol):
+    keystat = '<td class="yfnc_tabledata1">(.+?)</td>'  
+    url = 'http://finance.yahoo.com/q/ks?s=' + symbol + '+Key+Statistics'
+    htmlfile = urllib.urlopen(url)
+    htmltext = htmlfile.read()
+    regex = '<span id="yfs_j10_' + symbol + '">(.+?)</span>'
+    pattern = re.compile(regex)
+    pattern2 = re.compile(keystat)
+    marketcap = re.findall(pattern, htmltext)
+    keystats = re.findall(pattern2, htmltext)
+    return (marketcap + keystats[1:31])
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

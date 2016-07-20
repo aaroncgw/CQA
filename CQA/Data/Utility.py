@@ -10,12 +10,15 @@ import numpy as np
 
 DATA_PATH = 'C:\Users\Guanwen\Google Drive\CQA\Data\\'
 
-def get_compustat_data(filename, sectors=None, exchanges=None):
+def get_compustat_data(filename, sectors=None, exchanges=None, period=None):
     #sectors: list of string, ['10', '15', '20', '25', '30', '35', '45', '50'] 
     #exchanges: list of string, ['11', '12', '14']
     data = pd.read_csv(DATA_PATH + filename, dtype='unicode')
     data = data[data['stko']=='0']
-    data = data[data['adrrq'].isnull()]
+    if period is not None:
+        data = data[data['adrr'].isnull()]
+    else:
+        data = data[data['adrrq'].isnull()]
     if exchanges is not None:
         data = data[data['exchg'].isin(exchanges)]
     if sectors is not None:

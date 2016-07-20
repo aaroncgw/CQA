@@ -8,7 +8,7 @@ Created on Fri Oct 02 09:25:57 2015
 import pandas as pd
 import numpy as np
 
-def Calc(PIO_data, tickers=None):
+def Calc(PIO_data, tickers=None, details=False):
     
     if tickers is not None:
         raw_data = PIO_data[PIO_data['tic'].isin(tickers)].copy()
@@ -143,11 +143,20 @@ def Calc(PIO_data, tickers=None):
     PIO_result = data_set.groupby('tic').apply(pio_score_calc)
     PIO_result.name = 'pio_score'
     #cur.reset_index(inplace=True)
-    cur.set_index('tic', inplace=True)    
-    PIO_cur = cur
-    PIO_score = PIO_cur.join(PIO_result)
+    cur.set_index('tic', inplace=True)
+    pre.set_index('tic', inplace=True)    
+    PIO_score = cur.join(PIO_result)
+    if details:
+        detailed_result = pd.concat([PIO_score, pre])
+        detailed_result['ticker'] = detailed_result.index.tolist()
+        detailed_result = detailed_result.sort(['ticker', 'datadate'], ascending=[True, False])        
+        #return detailed_result        
+        return detailed_result[['datadate', 'roa', 'cfo', 'accrual', 'lever', 'liquid', 'eq_offer', 'margin', 'turnover', 'pio_score']]
+    else:
+       return PIO_result
+ 
     #data_set.set_index('tic', inplace=True)
     #data_set.sort_index(inplace=True)
     #data_set.to_csv(r'C:\Users\Guanwen\Google Drive\CQA_PIO_score.csv')
     #raw_data.to_csv(r'C:\Users\Guanwen\Google Drive\CQA_PIO_raw.csv')
-    return PIO_score[['pio_score', 'trail_oancfy']]
+    

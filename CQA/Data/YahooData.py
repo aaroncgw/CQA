@@ -2,8 +2,10 @@ from urllib2 import Request, urlopen
 import urllib, re
 import numpy as np
 import pandas as pd
+from dateutil.relativedelta import relativedelta
+import datetime
 
-ratios_tags_dict = {'PS':'p5', 'PB':'p6', 'PE':'r'}
+ratios_tags_dict = {'PS':'p5', 'PB':'p6', 'PE':'r', '50ma':'m3', '200ma':'m4', 'Price':'p'}
 value_tags_dict = {'Mkt_cap':'j1', 'EBITDA':'j4'}
 
 def _request(symbols, tags):
@@ -52,10 +54,18 @@ def get_value(symbols, value_name):
     return value_df
     
 def get_returns(symbols):  
-    rnt_dict = dict()    
+    rnt_dict = dict()
+    cur_date = datetime.datetime.now()
+    cur_year = str(cur_date.year)
+    cur_month = str(cur_date.month - 2)
+    cur_day = str(cur_date.day)    
+    pre_date = datetime.datetime.now() - relativedelta(years=1)
+    pre_year = str(pre_date.year)
+    pre_month = str(pre_date.month - 1)
+    pre_day = str(pre_date.day)        
     for symbol in symbols:    
         try:        
-            url = 'http://ichart.finance.yahoo.com/table.csv?s=%s&a=09&b=16&c=2014&d=08&e=16&f=2015&g=d&ignore=.csv' % (symbol)
+            url = 'http://ichart.finance.yahoo.com/table.csv?s='+symbol+'&a='+pre_month+'&b='+pre_day+'&c='+pre_year+'&d='+cur_month+'&e='+cur_day+'&f='+cur_year+'&g=d&ignore=.csv'
             req = Request(url)
             resp = urlopen(req)
             value_str = str(resp.read().decode('utf-8').strip())
@@ -84,6 +94,21 @@ def get_ev(symbols):
         ev_dict[symbol] = ev
     ev_df = pd.DataFrame(ev_dict.items(), columns=['ticker', 'ev'])
     return ev_df
+    
+def get_ev_ebitda(symbols):
+    ebitda_ev_dict = dict()    
+    for symbol in symbols:
+        try: 
+            value = keystatfunc(symbol)[7]
+            if value == "N/A":
+                ebitda_ev_dict[symbol] = np.nan
+            else:
+                ebitda_ev_dict[symbol] = 1 / float(value)
+        except:
+            ebitda_ev_dict[symbol] = np.nan
+    ebitda_ev_df = pd.DataFrame(ebitda_ev_dict.items(), columns=['ticker', 'ebitda_ev'])
+    ebitda_ev_df.set_index('ticker', inplace=True)
+    return ebitda_ev_df
     
 value_name_list = ['Enterprise Value', 
                     'Trailing P/E', 

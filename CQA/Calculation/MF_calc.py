@@ -62,7 +62,8 @@ def Calc(MF_data, tickers=None, mkt_cap_df=None):
     data_set['ev_ebit'] = data_set['ev'] / data_set['trailing_ebit']
     data_set['ebit_ev'] = data_set['trailing_ebit'] / data_set['ev']
     data_set['roc'] = data_set['trailing_ebit'] / data_set['capital']
-    
+       
+    '''
     def mf_score_calc(x):
         score = 0        
         if (x['ebit_ev'] >= 0).bool():
@@ -70,7 +71,13 @@ def Calc(MF_data, tickers=None, mkt_cap_df=None):
         elif (x['ebit_ev'] < 0).bool():
             score = 0.5*(x['ebit_ev'] + x['roc']) - 0.5*np.square(x['ebit_ev'] - x['roc'])
         return float(score)
+    '''
     
+    def mf_score_calc(x):
+        score = 0         
+        score = 0.5*(x['ebit_ev'] + x['roc']) - 0.5*np.square(x['ebit_ev'] - x['roc'])
+        return float(score)
+        
     result = data_set.groupby('tic').apply(mf_score_calc)
     result.name = 'MF_score'
     data_set.set_index('tikcer', inplace=True)
